@@ -16,6 +16,8 @@ New Features in 0.4.0
   The 256-color schemes now use purple instead of green for the ``run`` lines to
   make them easier distinguishable from pytest's "PASSED" output.
 - Network controlled relay providing GET/PUT based REST API
+- labgrid-client now has a ``copy-files`` subcommand to copy files onto mass
+  storage devices.
 
 Bug fixes in 0.4.0
 ~~~~~~~~~~~~~~~~~~
