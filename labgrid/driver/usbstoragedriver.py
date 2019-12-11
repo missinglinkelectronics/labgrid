@@ -93,7 +93,7 @@ class USBStorageDriver(Driver):
 
     @Driver.check_active
     @step(args=['filenames', 'target_dir', 'partition'])
-    def copy_files(self, filenames, target_dir, partition=1):
+    def copy_files(self, filenames, target_dir=pathlib.PurePath("."), partition=1):
         """
         Copies the file(s) specified by filename(s) to the
         bound USB storage partition.
