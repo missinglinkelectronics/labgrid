@@ -81,6 +81,8 @@ New Features in 0.3.0
   which tool should be used to write the image (either ``dd`` or ``bmaptool``)
 - Exporter configuration file ``exporter.yaml`` now allows use of environment
   variables.
+- labgrid-client now has a ``copy-files`` subcommand to copy files onto mass
+  storage devices.
 
 Breaking changes in 0.3.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~
