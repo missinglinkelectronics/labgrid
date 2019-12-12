@@ -1,0 +1,27 @@
+From: Stefan Wiehler <stefan.wiehler@missinglinkelectronics.com>
+Date: Thu, 12 Dec 2019 14:02:41 +0100
+Subject: Fix coordinator config paths
+
+Signed-off-by: Stefan Wiehler <stefan.wiehler@missinglinkelectronics.com>
+---
+ .crossbar/config.yaml | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/.crossbar/config.yaml b/.crossbar/config.yaml
+index cf0c461..f73ecc4 100644
+--- a/.crossbar/config.yaml
++++ b/.crossbar/config.yaml
+@@ -52,11 +52,11 @@ workers:
+     role: authenticator
+ - id: coordinator
+   type: guest
+-  executable: python3
++  executable: /opt/venvs/labgrid/bin/python3
+   arguments:
+   - -mlabgrid.remote.coordinator
+   options:
+-    workdir: .
++    workdir: /var/lib/labgrid-coordinator
+     env:
+       vars:
+         WS: ws://localhost:20408/ws
