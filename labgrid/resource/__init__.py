@@ -32,6 +32,7 @@ from .udev import (
     USBSerialPort,
     USBTMC,
     USBVideo,
+    XilinxUSBJTAG,
 )
 from .common import Resource, ResourceManager, ManagedResource
 from .ykushpowerport import YKUSHPowerPort, NetworkYKUSHPowerPort
