@@ -215,6 +215,8 @@ LABGRID-CLIENT COMMANDS
 
 ``write-image`` filename        Write images onto block devices (USBSDMux, USB Sticks, …)
 
+``xlx`` command                 Connect to a Xilinx Vivado hardware server
+
 ``reserve`` filter              Create a reservation
 
 ``cancel-reservation`` token    Cancel a pending reservation

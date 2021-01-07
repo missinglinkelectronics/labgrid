@@ -1270,6 +1270,46 @@ class ClientSession(ApplicationSession):
         except FileNotFoundError as e:
             raise UserError(e)
 
+    def _check_xlx_env(self):
+        if not "XILINX_VIVADO" in os.environ:
+            print("xlx subcommands must be invoked from within a Vivado environment", file=sys.stderr)
+            exit(1)
+
+    def _get_xlx(self, name):
+        place = self.get_acquired_place()
+        target = self._get_target(place)
+        from ..driver.xsdbdriver import XSDBDriver
+        from ..resource.remote import NetworkXilinxUSBJTAG
+        drv = None
+        for resource in target.resources:
+            if isinstance(resource, NetworkXilinxUSBJTAG):
+                try:
+                    drv = target.get_driver(XSDBDriver, name=name)
+                except NoDriverFoundError:
+                    target.set_binding_map({"interface": name})
+                    drv = XSDBDriver(target, name=name)
+                break
+        if not drv:
+            raise UserError("target has no compatible resource available")
+        target.activate(drv)
+        return drv
+
+    def xlx_run_xsdb(self):
+        self._check_xlx_env()
+        drv = self._get_xlx(self.args.resource)
+
+        processwrapper.enable_print()
+        drv.run([self.args.tcl_cmds])
+        processwrapper.disable_print()
+
+    def xlx_program_bitstream(self):
+        self._check_xlx_env()
+        drv = self._get_xlx(self.args.resource)
+
+        processwrapper.enable_print()
+        drv.program_bitstream(self.args.bitstream)
+        processwrapper.disable_print()
+
     def write_image(self):
         place = self.get_acquired_place()
         target = self._get_target(place)
@@ -1818,6 +1858,24 @@ def main():
     subparser.add_argument("--name", "-n", help="optional resource name")
     subparser.add_argument("filename", help="filename to boot on the target")
     subparser.set_defaults(func=ClientSession.write_image)
+
+    subparser = subparsers.add_parser('xlx', help="connect to a Xilinx Vivado hardware server")
+    subparser.set_defaults(func=lambda _: subparser.print_help())
+    xlx_subparsers = subparser.add_subparsers(
+        dest='subcommand',
+        title='available subcommands',
+        metavar="SUBCOMMAND",
+    )
+
+    xlx_subparser = xlx_subparsers.add_parser('xsdb', help="run XSDB")
+    xlx_subparser.add_argument('-r,', '--resource', help="resource name")
+    xlx_subparser.add_argument('tcl_cmds', help="Tcl commands")
+    xlx_subparser.set_defaults(func=ClientSession.xlx_run_xsdb)
+
+    xlx_subparser = xlx_subparsers.add_parser('program-bitstream', help="program bitstream")
+    xlx_subparser.add_argument('-r,', '--resource', help="resource name")
+    xlx_subparser.add_argument('bitstream', type=pathlib.PurePath, help="bistream file")
+    xlx_subparser.set_defaults(func=ClientSession.xlx_program_bitstream)
 
     subparser = subparsers.add_parser("reserve", help="create a reservation")
     subparser.add_argument("--wait", action="store_true", help="wait until the reservation is allocated")
