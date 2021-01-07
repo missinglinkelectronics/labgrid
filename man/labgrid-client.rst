@@ -180,6 +180,8 @@ LABGRID-CLIENT COMMANDS
 
 ``copy-files`` filename(s)      Copy files onto mass storage device
 
+``xlx`` command                 Connect to a Xilinx Vivado hardware server
+
 ``write-image``                 Write images onto block devices (USBSDMux, USB Sticks, …)
 
 ``reserve`` filter              Create a reservation
