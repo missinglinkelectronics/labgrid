@@ -1,4 +1,10 @@
-labgrid (0.2.0) UNRELEASED; urgency=low
+labgrid (0.3.3+mle.1) unstable; urgency=medium
+
+  * MLE internal release.
+
+ -- Stefan Wiehler <stefan.wiehler@missinglinkelectronics.com>  Wed, 7 Apr 2021 12:15:12 +0100
+
+labgrid (0.2.0) unstable; urgency=low
 
   * Initial release. (Closes: #XXXXXX)
 
