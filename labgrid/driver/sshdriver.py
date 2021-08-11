@@ -383,6 +383,11 @@ class SSHDriver(CommandMixin, Driver, CommandProtocol, FileTransferProtocol):
         self.logger.debug('Started keepalive for %s', self.networkservice.address)
 
     def _check_keepalive(self):
+        # WORKAROUND: as it sometimes happens that this keepalive is dying this
+        #   restarts the keepalive connection in those cases.
+        if self._keepalive.poll() is not None:
+            self._stop_keepalive()
+            self._start_keepalive()
         return self._keepalive.poll() is None
 
     def _stop_keepalive(self):
