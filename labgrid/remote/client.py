@@ -1206,6 +1206,11 @@ class ClientSession(ApplicationSession):
         drv.program_bitstream(self.args.bitstream)
         processwrapper.disable_print()
 
+    def xlx_force_bootmode(self):
+        self._check_xlx_env()
+        drv = self._get_xlx(self.args.resource)
+        drv.force_bootmode_reset(self.args.bootmode.lower())
+
     def _get_quartus(self, name):
         place = self.get_acquired_place()
         target = self._get_target(place)
@@ -1683,6 +1688,11 @@ def main():
     xlx_subparser.add_argument('-r,', '--resource', help="resource name")
     xlx_subparser.add_argument('bitstream', type=pathlib.PurePath, help="bitstream file")
     xlx_subparser.set_defaults(func=ClientSession.xlx_program_bitstream)
+
+    xlx_subparser = xlx_subparsers.add_parser('boot', help='force boot mode and reset device')
+    xlx_subparser.add_argument('-r,', '--resource', help="resource name")
+    xlx_subparser.add_argument('bootmode', type=str, help="Boot mode to select (jtag, sd, qsmi, emmc, usb")
+    xlx_subparser.set_defaults(func=ClientSession.xlx_force_bootmode)
 
     subparser = subparsers.add_parser('intel', help="connect to a Quartus Jtagd Server")
     subparser.set_defaults(func=lambda _: subparser.print_help())
