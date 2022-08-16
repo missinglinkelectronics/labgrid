@@ -50,3 +50,22 @@ class XSDBDriver(Driver):
             filename = self.target.env.config.get_image_path(self.bitstream)
 
         self.run(["fpga {}".format(filename)])
+
+    @Driver.check_active
+    @step(args=['bootmode'])
+    def force_bootmode_reset(self, bootmode):
+        if bootmode == 'jtag': mode = '0x0100'
+        elif bootmode == 'sd': mode = '0xE100'
+        elif bootmode == 'qspi': mode = '0x2100'
+        elif bootmode == 'emmc': mode = '0x6100'
+        elif bootmode == 'usb': mode = '0x7100'
+        else: raise KeyError(f"invalid boot mode {bootmode}")
+
+        self.run([
+            'target -set -filter {name =~ "PSU"}',
+            'mwr 0xffca0010 0x0',
+            'mwr 0xff5e0200 ' + mode,
+            'rst -system',
+            'after 1000',
+            'con'
+        ])
