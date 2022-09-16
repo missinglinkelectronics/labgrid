@@ -259,6 +259,7 @@ class ClientSession(ApplicationSession):
         else:
             places = sorted(self.places.items())
 
+        result = [tuple('Place Aliases Acquired Tags Comment'.split())]
         for name, place in places:
             if self.args.acquired and place.acquired is None:
                 continue
@@ -266,12 +267,18 @@ class ClientSession(ApplicationSession):
                 print("Place '{}':".format(name))
                 place.show(level=1)
             else:
-                line = "{}".format(name)
+                tag_list = []
+                for k,v in place.tags.items():
+                    tag_list.append(f"{k}={v}")
+                tag_list.sort()
+                result.append((name, ','.join(place.aliases), str(place.acquired or ''), ','.join(tag_list), place.comment))
 
-                if place.aliases:
-                    line += " ({})".format(' '.join(place.aliases))
-
-                print("{0:<40s} {1}".format(line, place.comment))
+        if len(result) > 1:
+            result.sort()
+            widths = [max(map(len, c)) for c in zip(*result)]
+            for name, alias, acquired, tag, comment in result:
+                print("{0:<{width[0]}s} | {1:<{width[1]}s} | {2:<{width[2]}s} | {3:<{width[3]}s} | {4}".format(
+                    name, alias, acquired, tag, comment, width=widths))
 
     def print_who(self):
         """Print acquired places by user"""
