@@ -50,6 +50,7 @@ setup(
         'requests>=2.22.0',
         'xmodem>=0.4.5',
         'autobahn>=19.11.0',
+        'paho-mqtt==1.5.1'
     ],
     packages=[
         'labgrid',
