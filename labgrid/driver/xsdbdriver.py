@@ -41,7 +41,7 @@ class XSDBDriver(Driver):
         tcl_cmd += "; ".join(tcl_cmds)
 
         cmd = [self.xsdb_bin, "-eval", tcl_cmd]
-        processwrapper.check_output(cmd)
+        return processwrapper.check_output(cmd)
 
     @Driver.check_active
     @step(args=['filename'])
@@ -54,18 +54,26 @@ class XSDBDriver(Driver):
     @Driver.check_active
     @step(args=['bootmode'])
     def force_bootmode_reset(self, bootmode):
-        if bootmode == 'jtag': mode = '0x0100'
-        elif bootmode == 'sd': mode = '0xE100'
-        elif bootmode == 'qspi': mode = '0x2100'
-        elif bootmode == 'emmc': mode = '0x6100'
-        elif bootmode == 'usb': mode = '0x7100'
-        else: raise KeyError(f"invalid boot mode {bootmode}")
+        # Check FPGA type
+        prop = str(self.run([
+            'puts [ jtag targets -filter { is_fpga == "1" } ]'
+        ]))
+        # MPSoC specific
+        if "xczu" in prop or "xcvc" in prop:
+            if bootmode == 'jtag': mode = '0x0100'
+            elif bootmode == 'sd': mode = '0xE100'
+            elif bootmode == 'qspi': mode = '0x2100'
+            elif bootmode == 'emmc': mode = '0x6100'
+            elif bootmode == 'usb': mode = '0x7100'
+            else: raise KeyError(f"invalid boot mode {bootmode}")
 
-        self.run([
-            'target -set -filter {name =~ "PSU"}',
-            'mwr 0xffca0010 0x0',
-            'mwr 0xff5e0200 ' + mode,
-            'rst -system',
-            'after 1000',
-            'con'
-        ])
+            self.run([
+                'target -set -filter {name =~ "PSU"}',
+                'mwr 0xffca0010 0x0',
+                'mwr 0xff5e0200 ' + mode,
+                'rst -system',
+                'after 1000',
+                'con'
+            ])
+        elif "xc7z" in prop: raise NotImplementedError("Zynq7000 is not implemented yet")
+        else: raise NotImplementedError("connected device is not supported")
