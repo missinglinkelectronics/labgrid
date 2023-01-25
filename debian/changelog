@@ -1,3 +1,12 @@
+labgrid (0.3.3+mle.2) unstable; urgency=medium
+
+  * add Intel PGM jtagd support
+  * add MQTT support
+  * change labgrid-client p output
+  * fix XSDB driver for pytest usage
+
+ -- Tobias Binkowski <tobias.binkowski@missinglinkelectronics.com>  Tue, 27 Jun 2023 15:06:24 +0200
+
 labgrid (0.3.3+mle.1) unstable; urgency=medium
 
   * MLE internal release.
