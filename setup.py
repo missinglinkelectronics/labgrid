@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 
-from setuptools import setup
+from setuptools import setup, Extension
 
 import fastentrypoints  # noqa: F401 # pylint: disable=unused-import
 
+
+module_filsel = Extension('libfilsel',
+                    sources = ['labgrid/clib/filsel.c'],
+                    extra_compile_args=['-Wall', '-shared', '-fPIC'],
+                    extra_link_args=['-ldl'])
+
+module_hwsf = Extension('libhwsf',
+                    sources = ['labgrid/clib/hwsf.c'],
+                    extra_compile_args=['-Wall', '-shared', '-fPIC'],
+                    extra_link_args=['-ldl'])
 
 setup(
     name='labgrid',
@@ -79,4 +89,5 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
+    ext_modules=[module_filsel, module_hwsf],
 )
