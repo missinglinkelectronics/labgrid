@@ -17,6 +17,7 @@ from .udev import (
     LXAUSBMux,
     MatchedSysfsGPIO,
     MXSUSBLoader,
+    QuartusUSBJTAG,
     RKUSBLoader,
     SiSPMPowerPort,
     SigrokUSBDevice,
@@ -48,3 +49,4 @@ from .dediprogflasher import DediprogFlasher, NetworkDediprogFlasher
 from .httpdigitalout import HttpDigitalOutput
 from .sigrok import SigrokDevice
 from .fastboot import AndroidNetFastboot
+from ..driver.quartuspgmdriver import QuartusPGMDriver
