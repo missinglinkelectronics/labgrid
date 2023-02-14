@@ -15,6 +15,7 @@ import warnings
 from socket import gethostname, getfqdn
 import attr
 from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
+import imp
 
 from .config import ResourceConfig
 from .common import ResourceEntry, enable_tcp_nodelay
@@ -273,6 +274,79 @@ class SerialPortExport(ResourceExport):
 
 exports["USBSerialPort"] = SerialPortExport
 exports["RawSerialPort"] = SerialPortExport
+
+
+@attr.s(eq=False)
+class QuartusServerExport(ResourceExport):
+    """ ResourceExport for a QuartusUSBJTAG via ``jtagd``"""
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        self.data['cls'] = "NetworkQuartusUSBJTAG"
+        from ..resource.udev import QuartusUSBJTAG
+        self.local = QuartusUSBJTAG(target=None, name=None, **self.local_params)
+        self.child = None
+
+    def __del__(self):
+        if self.child is not None:
+            self.release()
+
+    def _get_custom_config_file_name(self):
+        serialNumber = self.local.device_serial
+        return os.path.join(self.local.jtagd_file_locations, f"jtagd_cfg_{serialNumber}_{self.local.jtagd_port}.conf")
+
+    def acquire(self, *args, **kwargs):
+        """Start ``jtagd`` subprocess"""
+        assert self.local.avail
+
+        cfgFileName = self._get_custom_config_file_name()
+
+        with open(cfgFileName, 'w+') as file:
+            file.write(f"Password = \"{self.local.jtagd_password}\";")
+
+        #find the right path to the library
+        lib_path = imp.find_module("libhwsf")[1]
+
+        #get the usb path from the device serial number
+        serialNumber = self.local.device_serial
+        dev_grep = "grep {SERIAL} /sys/bus/usb/devices/*/serial | cut -d '/' -f6".format(SERIAL=serialNumber)
+        dev_path, _ = subprocess.Popen(dev_grep, shell=True, stdout=subprocess.PIPE).communicate()
+
+        my_env = os.environ.copy()
+        my_env["LD_PRELOAD"] = os.pathsep.join(filter(None, [lib_path, os.environ.get('LD_PRELOAD')]))
+        my_env["HWSF_DEV"] = "path:" + dev_path.decode("utf-8").replace("\n","")
+
+        cmd = " ".join([f"{self.local.jtagd_cmd}",
+                        f"--foreground",
+                        f"--port {self.local.jtagd_port}",
+                        f"--config {self._get_custom_config_file_name()}"])
+
+        self.logger.info("Starting jtagd with command: " + cmd)
+        self.logger.info("Starting jtagd with LD_PRELOAD=" + lib_path + " HWSF_DEV=" + my_env["HWSF_DEV"])
+
+        self.child = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid, env=my_env)
+
+    def release(self,  *args, **kwargs):
+        """Stop ``jtagd`` subprocess"""
+        assert self.child
+
+        os.remove(self._get_custom_config_file_name())
+        os.killpg(os.getpgid(self.child.pid), signal.SIGTERM)
+        self.child = None
+        self.logger.info(f"stopped jtagd at {self.local.jtagd_port}")
+
+    def _get_params(self):
+        """Helper function to return parameters"""
+        return {
+            'host': self.host,
+            'jtagd_password': self.local.jtagd_password,
+            'jtagd_port': self.local.jtagd_port,
+            'jtagd_cmd': self.local.jtagd_cmd,
+            'device_name': self.local.device_name,
+            'device_port': self.local.device_port,
+        }
+
+exports["QuartusUSBJTAG"] = QuartusServerExport
 
 
 @attr.s(eq=False)
