@@ -385,6 +385,25 @@ class USBNetworkInterface(USBResource, NetworkInterface):
 
 @target_factory.reg_resource
 @attr.s(eq=False)
+class QuartusUSBJTAG(USBResource):
+    jtagd_cmd = attr.ib(default="jtagd")
+    jtagd_password = attr.ib(default="password1234")
+    jtagd_port = attr.ib(default=3109)
+    device_name = attr.ib(default="Arrow-USB-Blaster")
+    device_port = attr.ib(default="")
+    device_serial = attr.ib(default="")
+    jtagd_file_locations = attr.ib("/tmp")
+    host = attr.ib(default="host")
+
+    def __attrs_post_init__(self):
+        self.match['DEVTYPE'] = 'usb_device'
+        super().__attrs_post_init__()
+
+    def filter_match(self, device):
+        return True
+
+@target_factory.reg_resource
+@attr.s(eq=False)
 class AlteraUSBBlaster(USBResource):
     def filter_match(self, device):
         if device.properties.get('ID_VENDOR_ID') != "09fb":
