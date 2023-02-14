@@ -153,6 +153,21 @@ class NetworkAlteraUSBBlaster(RemoteUSBResource):
 
 @target_factory.reg_resource
 @attr.s(eq=False)
+class NetworkQuartusUSBJTAG(NetworkResource, ManagedResource):
+    host = attr.ib(default="")
+    jtagd_password = attr.ib(default="password1234")
+    jtagd_port = attr.ib(default=3109)
+    jtagd_cmd = attr.ib(default="jtagd")
+    device_name = attr.ib(default="Arrow-USB-Blaster")
+    device_port = attr.ib(default="")
+
+    def __attrs_post_init__(self):
+        self.timeout = 10.0
+        super().__attrs_post_init__()
+
+
+@target_factory.reg_resource
+@attr.s(eq=False)
 class NetworkXilinxUSBJTAG(NetworkResource, ManagedResource):
     hw_server_cmd = attr.ib(default='hw_server')
     serial = attr.ib(factory=str)
