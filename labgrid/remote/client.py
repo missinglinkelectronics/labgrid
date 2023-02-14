@@ -1195,6 +1195,42 @@ class ClientSession(ApplicationSession):
         drv.program_bitstream(self.args.bitstream)
         processwrapper.disable_print()
 
+    def _get_quartus(self, name):
+        place = self.get_acquired_place()
+        target = self._get_target(place)
+        from ..driver.quartuspgmdriver import QuartusPGMDriver
+        from ..resource.remote import NetworkQuartusUSBJTAG
+        drv = None
+        for resource in target.resources:
+            if isinstance(resource, NetworkQuartusUSBJTAG):
+                try:
+                    drv = target.get_driver(QuartusPGMDriver, name=name)
+                except NoDriverFoundError:
+                    target.set_binding_map({"interface": name})
+                    drv = QuartusPGMDriver(target, name=name)
+                break
+        if not drv:
+            raise UserError("target has no compatible resource available")
+        target.activate(drv)
+        return drv
+
+    def intel_program_bitstream(self):
+        self._check_intel_env()
+        drv = self._get_quartus(self.args.resource)
+        processwrapper.enable_print()
+        ret, stdout, stderr = drv.flash(self.args.bitstream)
+        if not ret:
+            print("Flashing failed with:")
+            print(stdout)
+            print(stderr)
+        processwrapper.disable_print()
+
+    def _check_intel_env(self):
+        if not "QUARTUS_ROOTDIR" in os.environ:
+            print("Quartus subcommands must be invoked from within a Quartus environment", file=sys.stderr)
+            exit(1)
+        return
+
     def write_image(self):
         place = self.get_acquired_place()
         target = self._get_target(place)
@@ -1635,6 +1671,20 @@ def main():
     xlx_subparser.add_argument('-r,', '--resource', help="resource name")
     xlx_subparser.add_argument('bitstream', type=pathlib.PurePath, help="bistream file")
     xlx_subparser.set_defaults(func=ClientSession.xlx_program_bitstream)
+
+    subparser = subparsers.add_parser('intel', help="connect to a Quartus Jtagd Server")
+    subparser.set_defaults(func=lambda _: subparser.print_help())
+
+    intel_subparsers = subparser.add_subparsers(
+        dest='subcommand',
+        title='available subcommands',
+        metavar="SUBCOMMAND",
+    )
+
+    intel_subparser = intel_subparsers.add_parser('program-bitstream', help="program bitstream")
+    intel_subparser.add_argument('-r,', '--resource', help="resource name")
+    intel_subparser.add_argument('bitstream', type=pathlib.PurePath, help="bistream file")
+    intel_subparser.set_defaults(func=ClientSession.intel_program_bitstream)
 
     subparser = subparsers.add_parser('write-image', help="write an image onto mass storage")
     subparser.add_argument('-w', '--wait', type=float, default=10.0)
