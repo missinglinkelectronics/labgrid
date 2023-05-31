@@ -44,6 +44,17 @@ class ServerError(Error):
     pass
 
 
+class QuartusPgmDriverError(Exception):
+    """Exception raised for errors in the Quartus PGM Driver.
+    """
+
+    def __init__(self, stdout, stderr):
+        self.stdout = stdout
+        self.stderr = stderr
+        self.message = "QuartusPGM failed with stdout: " + stdout + " and stderr: " + stderr
+        super().__init__(self.message)
+
+
 class ClientSession(ApplicationSession):
     """The ClientSession encapsulates all the actions a Client can Invoke on
     the coordinator."""
@@ -1223,6 +1234,7 @@ class ClientSession(ApplicationSession):
             print("Flashing failed with:")
             print(stdout)
             print(stderr)
+            raise QuartusPgmDriverError(stdout, stderr)
         processwrapper.disable_print()
 
     def _check_intel_env(self):
