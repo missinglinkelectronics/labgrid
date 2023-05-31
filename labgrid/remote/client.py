@@ -1669,7 +1669,7 @@ def main():
 
     xlx_subparser = xlx_subparsers.add_parser('program-bitstream', help="program bitstream")
     xlx_subparser.add_argument('-r,', '--resource', help="resource name")
-    xlx_subparser.add_argument('bitstream', type=pathlib.PurePath, help="bistream file")
+    xlx_subparser.add_argument('bitstream', type=pathlib.PurePath, help="bitstream file")
     xlx_subparser.set_defaults(func=ClientSession.xlx_program_bitstream)
 
     subparser = subparsers.add_parser('intel', help="connect to a Quartus Jtagd Server")
@@ -1683,7 +1683,7 @@ def main():
 
     intel_subparser = intel_subparsers.add_parser('program-bitstream', help="program bitstream")
     intel_subparser.add_argument('-r,', '--resource', help="resource name")
-    intel_subparser.add_argument('bitstream', type=pathlib.PurePath, help="bistream file")
+    intel_subparser.add_argument('bitstream', type=pathlib.PurePath, help="bitstream file")
     intel_subparser.set_defaults(func=ClientSession.intel_program_bitstream)
 
     subparser = subparsers.add_parser('write-image', help="write an image onto mass storage")
