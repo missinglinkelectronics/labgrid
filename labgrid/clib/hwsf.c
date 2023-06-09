@@ -160,8 +160,9 @@ void __attribute ((constructor)) init(void)
 	char *e;
 
 	/*Attention: if the invoked program opens syslog as well,
-	all further logging from this library will appear with the new logging tag!
-	e.g: if you use the Library with the quartus jtagd the logging tag will change from hwsf to jtagd*/
+	all further logging from this library will appear with
+	the new logging tag! e.g: if you use the Library with the quartus
+	jtagd the logging tag will change from filsel to jtagd*/
 	openlog("hwsf", LOG_PID, 0);
 
 	data = &_data;
