@@ -82,9 +82,6 @@ struct filsel_data {
 
 	char dest_path[4096];
 
-	unsigned int en_dev_num;
-	char dev_num[3 + 1];
-
 	int desc_fd;
 };
 
