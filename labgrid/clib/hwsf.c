@@ -63,6 +63,7 @@ if this is specified!*/
 
 //TODO: how long can a USB serial be?
 #define DEV_SERIAL_PATH_LEN 255 + 1
+#define DEV_ROOT_PATH "/sys/bus/usb/devices/"
 
 enum {
 	LOG_TYPE_DBG,
@@ -293,7 +294,7 @@ static int match_desc_except(struct hwsf_data *data, const char *pathname)
 	rc = 0;
 	saved_errno = errno;
 
-	if (strncmp(pathname, "/sys/bus/usb/devices/", 21))
+	if (strncmp(pathname, DEV_ROOT_PATH, strlen(DEV_ROOT_PATH)))
 		goto out;
 
 	if (strlen(pathname) <= 21)
