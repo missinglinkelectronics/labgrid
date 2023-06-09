@@ -61,6 +61,8 @@ if this is specified!*/
 #define ENV_DEV "HWSF_DEV"
 #define ENV_PRG_NAME "HWSF_PRG_NAME"
 
+//TODO: how long can a USB serial be?
+#define DEV_SERIAL_PATH_LEN 255 + 1
 
 enum {
 	LOG_TYPE_DBG,
@@ -74,12 +76,10 @@ struct hwsf_data {
 	int debug;
 
 	unsigned int en_dev_serial;
-	//TODO: how long can a USB serial be?
-	char dev_serial[255 + 1];
+	char dev_serial[DEV_SERIAL_PATH_LEN];
 
-	//TODO: how deep can path like 1-3.3 be?
 	unsigned int en_dev_path;
-	char dev_path[255 + 1];
+	char dev_path[DEV_SERIAL_PATH_LEN];
 
 	unsigned int en_dev_num;
 	char dev_num[3 + 1];
