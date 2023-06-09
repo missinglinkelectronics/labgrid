@@ -139,8 +139,9 @@ void __attribute ((constructor)) init(void)
 	char *e;
 
 	/*Attention: if the invoked program opens syslog as well,
-	all further logging from this library will appear with the new logging tag!
-	e.g: if you use the Library with the quartus jtagd the logging tag will change from filsel to jtagd*/
+	all further logging from this library will appear with
+	the new logging tag! e.g: if you use the Library with the quartus
+	jtagd the logging tag will change from filsel to jtagd*/
 	openlog("filsel", LOG_PID, 0);
 
 	data = &_data;
@@ -218,7 +219,8 @@ int open(const char *pathname, int flags, ...)
 		return libc_open64(pathname, flags, mode);
 
 	if (strncmp(data->org_path, pathname, strlen(data->org_path)) == 0) {
-		log_dbg(data, "Spoofing Path from %s to %s\n",data->org_path,data->dest_path);
+		log_dbg(data, "Spoofing Path from %s to %s\n", data->org_path,
+			data->dest_path);
 		rc = libc_open(data->dest_path, flags, mode);
 	}else{
 		rc = libc_open(pathname, flags, mode);
@@ -247,7 +249,8 @@ int openat(int dirfd, const char *pathname, int flags, ...)
 		return libc_open64(pathname, flags, mode);
 
 	if (strncmp(data->org_path, pathname, strlen(data->org_path)) == 0) {
-		log_dbg(data, "Spoofing Path from %s to %s\n",data->org_path,data->dest_path);
+		log_dbg(data, "Spoofing Path from %s to %s\n", data->org_path,
+			data->dest_path);
 		rc = libc_openat(dirfd, data->dest_path, flags, mode);
 	}else{
 		rc = libc_openat(dirfd, pathname, flags, mode);
@@ -274,7 +277,8 @@ int open64(const char *pathname, int flags, ...)
 		return libc_open64(pathname, flags, mode);
 
 	if (strncmp(data->org_path, pathname, strlen(data->org_path)) == 0) {
-		log_dbg(data, "Spoofing Path from %s to %s\n",data->org_path,data->dest_path);
+		log_dbg(data, "Spoofing Path from %s to %s\n", data->org_path,
+			data->dest_path);
 		rc = libc_open64(data->dest_path, flags, mode);
 	}else{
 		rc = libc_open64(pathname, flags, mode);
