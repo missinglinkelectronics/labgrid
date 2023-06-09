@@ -62,7 +62,8 @@ if this is specified!*/
 #define ENV_DEST_PATH "FILSEL_DEST_PATH"
 
 #define ENV_PRG_NAME "FILSEL_PROG_NAME"
- 
+#define MAX_PATH_LEN 4096
+
 typedef ssize_t (*real_read_t)(int, void *, size_t);
 
 enum {
@@ -78,9 +79,9 @@ struct filsel_data {
 
 	int active;
 
-	char org_path[4096];
+	char org_path[MAX_PATH_LEN];
 
-	char dest_path[4096];
+	char dest_path[MAX_PATH_LEN];
 
 	int desc_fd;
 };
