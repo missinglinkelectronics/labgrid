@@ -356,7 +356,7 @@ class QuartusUSBJTAG(USBResource):
     device_name = attr.ib(default="Arrow-USB-Blaster")
     device_port = attr.ib(default="")
     device_serial = attr.ib(default="")
-    jtagd_file_locations = attr.ib("/tmp")
+    jtagd_file_locations = attr.ib(default="/tmp")
     host = attr.ib(default="host")
 
     def __attrs_post_init__(self):
