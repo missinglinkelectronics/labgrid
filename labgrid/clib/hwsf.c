@@ -52,6 +52,9 @@
 #define LIBCPATH "libc.so.6"
 #endif
 
+/* uncomment and adjust this line to define the application that this library is
+targeted at. Keep in mind that the library will not work with any other program
+if this is specified!*/
 //#define DEF_ENV_PRG_NAME "hw_server"
 
 #define ENV_DBG "HWSF_DBG"
