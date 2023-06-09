@@ -64,6 +64,7 @@ if this is specified!*/
 //TODO: how long can a USB serial be?
 #define DEV_SERIAL_PATH_LEN 255 + 1
 #define DEV_ROOT_PATH "/sys/bus/usb/devices/"
+#define SIB_PATH_LEN 255
 
 enum {
 	LOG_TYPE_DBG,
@@ -245,7 +246,7 @@ static int read_desc_sibling(const char *pathname, char *last_slash,
 			     const char *sibling, void *buf, size_t size)
 {
 	int lsi;
-	char sib_path[255];
+	char sib_path[SIB_PATH_LEN];
 	int sib_fd;
 	int n;
 
