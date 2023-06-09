@@ -42,7 +42,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <syslog.h>
-
+#include <limits.h>
 #include <dlfcn.h>
 
 
@@ -62,7 +62,6 @@ if this is specified!*/
 #define ENV_DEST_PATH "FILSEL_DEST_PATH"
 
 #define ENV_PRG_NAME "FILSEL_PROG_NAME"
-#define MAX_PATH_LEN 4096
 
 typedef ssize_t (*real_read_t)(int, void *, size_t);
 
@@ -79,9 +78,9 @@ struct filsel_data {
 
 	int active;
 
-	char org_path[MAX_PATH_LEN];
+	char org_path[PATH_MAX];
 
-	char dest_path[MAX_PATH_LEN];
+	char dest_path[PATH_MAX];
 
 	int desc_fd;
 };
@@ -190,6 +189,13 @@ void __attribute ((constructor)) init(void)
 		data->active = 0;
 		return;
 	}
+	if(strlen(e) > PATH_MAX) {
+		log_warn(data, "Length of provided ENV_ORG_PATH exceeds the maximum path length which is %d",
+			 PATH_MAX);
+		data->active = 0;
+		return;
+	}
+
 	strncpy(data->org_path, e, strlen(e));
 
 	e = getenv(ENV_DEST_PATH);
@@ -198,6 +204,13 @@ void __attribute ((constructor)) init(void)
 		data->active = 0;
 		return;
 	}
+	if(strlen(e) > PATH_MAX) {
+		log_warn(data, "Length of provided ENV_DEST_PATH exceeds the maximum path length which is %d",
+			 PATH_MAX);
+		data->active = 0;
+		return;
+	}
+
 	strncpy(data->dest_path, e, strlen(e));
 }
 
