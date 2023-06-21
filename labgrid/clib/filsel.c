@@ -1,10 +1,11 @@
 /*
- * hwsf.c - LD_PRELOAD library to intercept read access to
- *          /sys/bus/usb/devices/<path>/descriptors and spoof
- *          all idVendor and idProduct fields except for one
- *          single USB device
+ * filsel.c - LD_PRELOAD library to spoof read access from
+ *          a particular file/path to another. The library
+ *          will take a path from the env variable ENV_ORG_PATH
+ *          and replace it with the path stored in ENV_DEST_PATH
  *
- * Copyright (C) 2019  Joachim Foerster <JOFT@gmx.de>
+ * Copyright (C) 2023 Simon Lever <simon.lever@missinglinkelectronics.com>  
+ * "(heavily) based on hwsf.c which is copyright Joachim Foerster <JOFT@gmx.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
