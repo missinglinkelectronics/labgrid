@@ -1,3 +1,9 @@
+labgrid (0.3.3+mle.3) unstable; urgency=medium
+
+  * fix to be buildable on python3.10
+
+ -- Tobias Binkowski <tobias.binkowski@missinglinkelectronics.com>  Tue, 25 Jul 2023 10:54:13 +0200
+
 labgrid (0.3.3+mle.2) unstable; urgency=medium
 
   * add Intel PGM jtagd support
