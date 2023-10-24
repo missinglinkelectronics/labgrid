@@ -1,3 +1,10 @@
+labgrid (0.3.3+mle.4) unstable; urgency=medium
+
+  * add port forwarding to ssh driver
+  * add retry to MQTTs _publish
+
+ -- Tobias Binkowski <tobias.binkowski@missinglinkelectronics.com>  Tue, 24 Oct 2023 11:03:00 +0200
+
 labgrid (0.3.3+mle.3) unstable; urgency=medium
 
   * fix to be buildable on python3.10
