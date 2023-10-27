@@ -87,10 +87,13 @@ class TasmotaPowerDriver(Driver, PowerProtocol):
     @Driver.check_active
     @step()
     def get(self):
-        self._client.publish(self.power.power_topic)
-        timeout = Timeout(3.0)
-        while self._status is None:
-            time.sleep(0.1)
-            if timeout.expired:
-                raise MQTTError("Could not get initial status")
-        return self._status
+        for retry in range(3):
+            self._publish(self.power.power_topic, "")
+            timeout = Timeout(1.0)
+            while self._status is None:
+                time.sleep(0.1)
+                if timeout.expired:
+                    break
+            if self._status is not None:
+                return self._status
+        raise MQTTError("Could not get initial status")
