@@ -38,7 +38,7 @@ class XSDBDriver(Driver):
             url[1] = self.interface.host
 
         tcl_cmd = "connect -url {}; ".format(":".join(url))
-        tcl_cmd += "; ".join(tcl_cmds)
+        tcl_cmd += "; ".join(tcl_cmds) + "; disconnect"
 
         cmd = [self.xsdb_bin, "-eval", tcl_cmd]
         return processwrapper.check_output(cmd)
