@@ -288,7 +288,7 @@ class ClientSession(ApplicationSession):
                 for k,v in place.tags.items():
                     tag_list.append(f"{k}={v}")
                 tag_list.sort()
-                result.append((name, ','.join(place.aliases), str(place.acquired or ''), ','.join(tag_list), place.comment))
+                result.append((name, ','.join(place.aliases), str(place.acquired or ''), ' '.join(tag_list), place.comment))
 
         if len(result) > 1:
             result.sort()
