@@ -399,8 +399,6 @@ class QuartusUSBJTAG(USBResource):
         self.match['DEVTYPE'] = 'usb_device'
         super().__attrs_post_init__()
 
-    def filter_match(self, device):
-        return True
 
 @target_factory.reg_resource
 @attr.s(eq=False)
@@ -426,16 +424,6 @@ class XilinxUSBJTAG(USBResource):
         self.match['DEVTYPE'] = 'usb_device'
         super().__attrs_post_init__()
 
-    def filter_match(self, device):
-        match = (device.properties.get('ID_VENDOR_ID'), device.properties.get('ID_MODEL_ID'))
-
-        if match not in [("0403", "6010"),  # Trenz Electronic TE0790-03
-                         ("0403", "6014"),  # Digilent JTAG-SMT2/JTAG-HS3
-                         ("03fd", "0013"),  # Xilinx Platform Cable USB
-                         ("03fd", "0008")]: # Xilinx Platform Cable USB II
-            return False
-
-        return super().filter_match(device)
 
 @target_factory.reg_resource
 @attr.s(eq=False)
