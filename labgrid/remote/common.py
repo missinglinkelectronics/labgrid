@@ -187,7 +187,7 @@ class Place:
         if self.comment:
             print(indent + f"comment: {self.comment}")
         if self.tags:
-            print(indent + f"tags: {', '.join(k + '=' + v for k, v in sorted(self.tags.items()))}")
+            print(indent + f"tags: {' '.join(k + '=' + v for k, v in sorted(self.tags.items()))}")
         print(indent + "matches:")
         for match in sorted(self.matches):
             print(indent + f"  {match}")
