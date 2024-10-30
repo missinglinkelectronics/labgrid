@@ -105,10 +105,6 @@ class ClientSession(ApplicationSession):
         )
 
     def onChallenge(self, challenge):
-        import warnings
-
-        warnings.warn("Ticket authentication is deprecated. Please update your coordinator.", DeprecationWarning)
-        logging.warning("Ticket authentication is deprecated. Please update your coordinator.")
         return "dummy-ticket"
 
     async def onJoin(self, details):
