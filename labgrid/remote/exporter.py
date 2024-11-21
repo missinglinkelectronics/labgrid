@@ -3,6 +3,7 @@ them available to other clients on the same coordinator"""
 
 import argparse
 import asyncio
+import json
 import logging
 import sys
 import os
@@ -771,6 +772,65 @@ class YKUSHPowerPortExport(ResourceExport):
 
 
 exports["YKUSHPowerPort"] = YKUSHPowerPortExport
+
+
+@attr.s(eq=False)
+class TasmotaPowerPortExport(ResourceExport):
+    """ResourceExport for TasmotaPowerPort devices"""
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        self.data["cls"] = self.cls
+        from ..resource import mqtt
+
+        local_cls = getattr(mqtt, self.cls)
+        self.local = local_cls(target=None, name=None, **self.local_params)
+
+        self.status = None
+
+        import paho.mqtt.client as mqtt
+        self._client = None
+        self._client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        self._client.connect(self.local.host)
+        self._client.on_message = self._on_message
+        self._client.on_connect = self._on_connect
+        self._client.loop_start()
+
+    def _on_connect(self, client, userdata, flags, reason_code, properties):
+        client.subscribe(self.local.status_topic)
+        if self.local.tele_topic:
+            client.subscribe(self.local.tele_topic)
+
+    def _on_message(self, client, userdata, msg):
+        if msg.topic == self.local.tele_topic:
+            data = json.loads(msg.payload.decode("utf-8"))
+            power = self.local.power_topic.split('/')[-1]
+            if power in data:
+                self.status = data[power]
+        else:
+            if msg.payload == b'ON':
+                self.status = "ON"
+            elif msg.payload == b'OFF':
+                self.status = "OFF"
+            else:
+                raise ValueError("unexpected payload in status topic "
+                                 + {msg.payload})
+
+    def _get_params(self):
+        """Helper function to return parameters"""
+        return {
+            "host": self.local.host,
+            "avail_topic": self.local.avail_topic,
+            "power_topic": self.local.power_topic,
+            "status_topic": self.local.status_topic,
+            "tele_topic": self.local.tele_topic,
+            "extra": {
+                "status": self.status,
+            }
+        }
+
+
+exports["TasmotaPowerPort"] = TasmotaPowerPortExport
 
 
 class ExporterSession(ApplicationSession):
