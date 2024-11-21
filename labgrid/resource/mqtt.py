@@ -68,3 +68,5 @@ class TasmotaPowerPort(MQTTResource):
                          validator=attr.validators.instance_of(str))
     status_topic = attr.ib(default=None,
                          validator=attr.validators.instance_of(str))
+    tele_topic = attr.ib(default=None,
+                        validator=attr.validators.optional(attr.validators.instance_of(str)))
