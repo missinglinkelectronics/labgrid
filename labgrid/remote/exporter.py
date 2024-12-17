@@ -977,6 +977,73 @@ class TasmotaPowerPortExport(ResourceExport):
 exports["TasmotaPowerPort"] = TasmotaPowerPortExport
 
 
+@attr.s(eq=False)
+class IPMIPowerPortExport(ResourceExport):
+    """ResourceExport for IPMIPowerPort devices"""
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        self.data["cls"] = self.cls
+        from ..resource.power import IPMIPowerPort
+        self.local = IPMIPowerPort(target=None, name=None, **self.local_params)
+
+        self.lastpoll = 0
+        self.job = None
+        self.local.avail = False
+        self.status = None
+
+    def poll(self):
+        now = time.monotonic()
+        if self.job:
+            self.lastpoll = now
+            if self.job.poll() is None:
+                return super().poll()
+            if self.job.returncode != 0:
+                self.status = self._ipmi_parse()
+                self.local.avail = False
+                self.job = None
+                return super().poll()
+
+            self.status = self._ipmi_parse().upper()
+            self.local.avail = True
+            self.job = None
+
+        if now - self.lastpoll < self.local.polling:
+            return super().poll()
+        self.lastpoll = now
+
+        if self.local.polling > 0:
+            self.job = self._ipmi_power('--stat')
+
+        return super().poll()
+
+    def _ipmi_power(self, cmd):
+        runstr = f"ipmi-power -h {self.local.host} -u {self.local.username} "
+        runstr += f"--session-timeout={self.local.timeout*1000} "
+        runstr += f"-p {self.local.password} {cmd} {self.local.args}"
+        return subprocess.Popen(runstr.strip().split(' '), stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+
+    def _ipmi_parse(self):
+        out = self.job.stdout.read() + self.job.stderr.read()
+        try:
+            return out.decode('utf-8').split(':')[1][1:-1]
+        except:
+            return ""
+
+    def _get_params(self):
+        """Helper function to return parameters"""
+        return {
+            **self.local_params,
+            "extra": {
+                "status": self.status,
+            }
+        }
+
+
+exports["IPMIPowerPort"] = IPMIPowerPortExport
+
+
 class ExporterSession(ApplicationSession):
     def onConnect(self):
         """Set up internal datastructures on successful connection:

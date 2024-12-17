@@ -331,7 +331,9 @@ Arguments:
  - host (str): hostname or ip the IPMI interface of the PC is reachable
  - username (str): username to use for IPMI login
  - password (str): password to use for IPMI login
- - timeout (int): timeout to use when polling the resource
+ - timeout (int): time to wait for the command to finish
+ - polling (int): interval to poll resource in exporter (disabled if 0)
+ - args (str): extra args to prepend the command with
 
 Used by:
   - `IPMIPowerDriver`_

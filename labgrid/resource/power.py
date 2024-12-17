@@ -59,9 +59,13 @@ class IPMIPowerPort(Resource):
         host (str): hostname or ip the IPMI interface of the PC is reachable
         username (str): username to use for IPMI login
         password (str): password to use for IPMI login
-        timeout (int): timeout to use when polling the resource
+        timeout (int): time to wait for command to finish
+        polling (int): interval to poll resource in exporter (disabled if 0)
+        args (str): extra args to prepend the command with
     """
     host = attr.ib(validator=attr.validators.instance_of(str))
     username = attr.ib(validator=attr.validators.instance_of(str))
     password = attr.ib(validator=attr.validators.instance_of(str))
-    timeout = attr.ib(default=30, validator=attr.validators.instance_of(int))
+    timeout = attr.ib(default=5, validator=attr.validators.instance_of(int))
+    polling = attr.ib(default=0, validator=attr.validators.instance_of(int))
+    args = attr.ib(default="", validator=attr.validators.instance_of(str))
