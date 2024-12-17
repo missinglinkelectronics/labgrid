@@ -311,7 +311,8 @@ A :any:`AMTPowerPort` describes a AMT port accessible via `amtctrl`.
 Arguments:
  - host (str): hostname or ip the AMT interface of the PC is reachable
  - password (str): password to use for AMT login
- - timeout (int): timeout to use when polling the resource
+ - timeout (int): time to wait for the command to finish
+ - polling (int): interval to poll resource in exporter (disabled if 0)
 
 Used by:
   - `AMTPowerDriver`_

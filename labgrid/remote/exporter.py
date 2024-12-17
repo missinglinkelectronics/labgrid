@@ -1044,6 +1044,74 @@ class IPMIPowerPortExport(ResourceExport):
 exports["IPMIPowerPort"] = IPMIPowerPortExport
 
 
+@attr.s(eq=False)
+class AMTPowerPortExport(ResourceExport):
+    """ResourceExport for AMTPowerPort devices"""
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        self.data["cls"] = self.cls
+        from ..resource.power import AMTPowerPort
+        self.local = AMTPowerPort(target=None, name=None, **self.local_params)
+
+        self.lastpoll = 0
+        self.job = None
+        self.local.avail = False
+        self.status = None
+
+    def poll(self):
+        now = time.monotonic()
+        if self.job:
+            self.lastpoll = now
+            if self.job.poll() is None:
+                return super().poll()
+            self.status = self._amt_parse(self.job.returncode)
+
+            if self.job.returncode != 0:
+                self.local.avail = False
+            else:
+                self.local.avail = True
+            self.job = None
+            return super().poll()
+
+        if now - self.lastpoll < self.local.polling:
+            return super().poll()
+        self.lastpoll = now
+
+        if self.local.polling > 0:
+            self.job = self._amt_power('status')
+
+        return super().poll()
+
+    def _amt_power(self, cmd):
+        runstr = f"amtctrl {self.local.host} {cmd} -p"
+        p = subprocess.Popen(runstr.split(' '), text=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             stdin=subprocess.PIPE)
+        p.stdin.write(self.local.password)
+        p.stdin.close()
+        return p
+
+    def _amt_parse(self, ret):
+        out = self.job.stdout.read() + self.job.stderr.read()
+        if ret != 0:
+            out = out.split(']')[-1]
+            out = ''.join(x for x in out if not x in ['(',')','"', "'"])
+        return out.strip().upper()
+
+    def _get_params(self):
+        """Helper function to return parameters"""
+        return {
+            **self.local_params,
+            "extra": {
+                "status": self.status,
+            }
+        }
+
+
+exports["AMTPowerPort"] = AMTPowerPortExport
+
+
 class ExporterSession(ApplicationSession):
     def onConnect(self):
         """Set up internal datastructures on successful connection:
