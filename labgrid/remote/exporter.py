@@ -19,7 +19,7 @@ from typing import Dict, Type
 from socket import gethostname, getfqdn
 import attr
 from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
-import imp
+import importlib
 
 from .config import ResourceConfig
 from .common import ResourceEntry, enable_tcp_nodelay, monkey_patch_max_msg_payload_size_ws_option
@@ -329,7 +329,7 @@ class QuartusServerExport(ResourceExport):
             file.write(f"Password = \"{self.local.jtagd_password}\";")
 
         #find the right path to the library
-        lib_path = imp.find_module("libhwsf")[1]
+        lib_path = importlib.machinery.PathFinder.find_spec('libfilsel').origin
 
         #get the usb path from the device serial number
         serialNumber = self.local.device_serial

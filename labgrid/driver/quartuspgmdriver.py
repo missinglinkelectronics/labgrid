@@ -3,7 +3,7 @@ import subprocess
 import os
 import re
 import attr
-import imp
+import importlib
 import tempfile
 from pathlib import Path
 
@@ -63,7 +63,7 @@ class QuartusPGMDriver(Driver):
         log = logging.getLogger("QPGM_Driver")
 
         try:
-            lib_path = imp.find_module("libfilsel")[1]
+            lib_path = importlib.machinery.PathFinder.find_spec('libfilsel').origin
         except Exception as e:
             return False, "could not find libfilsel!", str(e)
 
