@@ -1307,21 +1307,21 @@ class ClientSession(ApplicationSession):
         return drv
 
     def xlx_run_xsdb(self):
-        drv = self._get_xlx(self.args.resource)
+        drv = self._get_xlx(self.args.name)
 
         processwrapper.enable_print()
         drv.run([self.args.tcl_cmds])
         processwrapper.disable_print()
 
     def xlx_program_bitstream(self):
-        drv = self._get_xlx(self.args.resource)
+        drv = self._get_xlx(self.args.name)
 
         processwrapper.enable_print()
         drv.program_bitstream(self.args.bitstream)
         processwrapper.disable_print()
 
     def xlx_force_bootmode(self):
-        drv = self._get_xlx(self.args.resource)
+        drv = self._get_xlx(self.args.name)
         drv.force_bootmode_reset(self.args.bootmode.lower())
 
     def _get_quartus(self, name):
@@ -1344,7 +1344,7 @@ class ClientSession(ApplicationSession):
         return drv
 
     def intel_program_bitstream(self):
-        drv = self._get_quartus(self.args.resource)
+        drv = self._get_quartus(self.args.name)
         processwrapper.enable_print()
         ret, stdout, stderr = drv.flash(self.args.bitstream)
         if not ret:
@@ -1904,6 +1904,7 @@ def main():
     subparser.set_defaults(func=ClientSession.write_image)
 
     subparser = subparsers.add_parser('xlx', help="connect to a Xilinx Vivado hardware server")
+    subparser.add_argument("--name", "-n", help="optional resource name")
     subparser.set_defaults(func=lambda _: subparser.print_help())
     xlx_subparsers = subparser.add_subparsers(
         dest='subcommand',
@@ -1912,21 +1913,19 @@ def main():
     )
 
     xlx_subparser = xlx_subparsers.add_parser('xsdb', help="run XSDB")
-    xlx_subparser.add_argument('-r,', '--resource', help="resource name")
     xlx_subparser.add_argument('tcl_cmds', help="Tcl commands")
     xlx_subparser.set_defaults(func=ClientSession.xlx_run_xsdb)
 
     xlx_subparser = xlx_subparsers.add_parser('program-bitstream', help="program bitstream")
-    xlx_subparser.add_argument('-r,', '--resource', help="resource name")
     xlx_subparser.add_argument('bitstream', type=pathlib.PurePath, help="bitstream file")
     xlx_subparser.set_defaults(func=ClientSession.xlx_program_bitstream)
 
     xlx_subparser = xlx_subparsers.add_parser('boot', help='force boot mode and reset device')
-    xlx_subparser.add_argument('-r,', '--resource', help="resource name")
     xlx_subparser.add_argument('bootmode', type=str, help="Boot mode to select (jtag, sd, qsmi, emmc, usb")
     xlx_subparser.set_defaults(func=ClientSession.xlx_force_bootmode)
 
     subparser = subparsers.add_parser('intel', help="connect to a Quartus Jtagd Server")
+    subparser.add_argument("--name", "-n", help="optional resource name")
     subparser.set_defaults(func=lambda _: subparser.print_help())
 
     intel_subparsers = subparser.add_subparsers(
@@ -1936,7 +1935,6 @@ def main():
     )
 
     intel_subparser = intel_subparsers.add_parser('program-bitstream', help="program bitstream")
-    intel_subparser.add_argument('-r,', '--resource', help="resource name")
     intel_subparser.add_argument('bitstream', type=pathlib.PurePath, help="bitstream file")
     intel_subparser.set_defaults(func=ClientSession.intel_program_bitstream)
 
