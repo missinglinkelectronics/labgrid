@@ -1287,11 +1287,6 @@ class ClientSession(ApplicationSession):
         except FileNotFoundError as e:
             raise UserError(e)
 
-    def _check_xlx_env(self):
-        if not "XILINX_VIVADO" in os.environ:
-            print("xlx subcommands must be invoked from within a Vivado environment", file=sys.stderr)
-            exit(1)
-
     def _get_xlx(self, name):
         place = self.get_acquired_place()
         target = self._get_target(place)
@@ -1312,7 +1307,6 @@ class ClientSession(ApplicationSession):
         return drv
 
     def xlx_run_xsdb(self):
-        self._check_xlx_env()
         drv = self._get_xlx(self.args.resource)
 
         processwrapper.enable_print()
@@ -1320,7 +1314,6 @@ class ClientSession(ApplicationSession):
         processwrapper.disable_print()
 
     def xlx_program_bitstream(self):
-        self._check_xlx_env()
         drv = self._get_xlx(self.args.resource)
 
         processwrapper.enable_print()
@@ -1328,7 +1321,6 @@ class ClientSession(ApplicationSession):
         processwrapper.disable_print()
 
     def xlx_force_bootmode(self):
-        self._check_xlx_env()
         drv = self._get_xlx(self.args.resource)
         drv.force_bootmode_reset(self.args.bootmode.lower())
 
@@ -1352,7 +1344,6 @@ class ClientSession(ApplicationSession):
         return drv
 
     def intel_program_bitstream(self):
-        self._check_intel_env()
         drv = self._get_quartus(self.args.resource)
         processwrapper.enable_print()
         ret, stdout, stderr = drv.flash(self.args.bitstream)
@@ -1362,12 +1353,6 @@ class ClientSession(ApplicationSession):
             print(stderr)
             raise QuartusPgmDriverError(stdout, stderr)
         processwrapper.disable_print()
-
-    def _check_intel_env(self):
-        if not "QUARTUS_ROOTDIR" in os.environ:
-            print("Quartus subcommands must be invoked from within a Quartus environment", file=sys.stderr)
-            exit(1)
-        return
 
     def write_image(self):
         place = self.get_acquired_place()
