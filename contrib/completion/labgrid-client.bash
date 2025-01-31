@@ -808,6 +808,60 @@ _labgrid_client_reserve()
     _labgrid_client_generic_subcommand "--wait --shell --prio"
 }
 
+_labgrid_client_xlx()
+{
+    local cur prev words cword
+    _init_completion || return
+
+    case "$prev" in
+    -n|--name)
+        _labgrid_complete match-names "$cur"
+        return
+        ;;
+    esac
+
+    case "$cur" in
+    -*)
+        COMPREPLY=( $(compgen -W "--name $_labgrid_shared_options" -- "$cur") )
+        ;;
+    *)
+        local args
+        _labgrid_count_args "@(-n|--name)" || return
+        # only complete second argument
+        [ "$args" -ne 2 ] && return
+
+        COMPREPLY=( $(compgen -W "xsdb program-bitstream boot" -- "$cur") )
+        ;;
+    esac
+}
+
+_labgrid_client_intel()
+{
+    local cur prev words cword
+    _init_completion || return
+
+    case "$prev" in
+    -n|--name)
+        _labgrid_complete match-names "$cur"
+        return
+        ;;
+    esac
+
+    case "$cur" in
+    -*)
+        COMPREPLY=( $(compgen -W "--name $_labgrid_shared_options" -- "$cur") )
+        ;;
+    *)
+        local args
+        _labgrid_count_args "@(-n|--name)" || return
+        # only complete second argument
+        [ "$args" -ne 2 ] && return
+
+        COMPREPLY=( $(compgen -W "program-bitstream" -- "$cur") )
+        ;;
+    esac
+}
+
 _labgrid_client_export()
 {
     local cur prev words cword
@@ -928,7 +982,9 @@ _labgrid_client()
                                wait \
                                reservations \
                                version \
-                               export"
+                               export \
+                               xlx \
+                               intel"
             COMPREPLY=( $(compgen -W "$subcommands" -- "$cur") )
             return
             ;;
