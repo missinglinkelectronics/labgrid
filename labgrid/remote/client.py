@@ -1307,11 +1307,10 @@ class ClientSession(ApplicationSession):
         return drv
 
     def xlx_run_xsdb(self):
-        drv = self._get_xlx(self.args.name)
+        _, drv = self._get_xlx(self.args.name)
 
-        processwrapper.enable_print()
-        drv.run([self.args.tcl_cmds])
-        processwrapper.disable_print()
+        drv.run([self.args.tcl_cmds],
+                interactive = self.args.interactive or not bool(self.args.tcl_cmds))
 
     def xlx_program_bitstream(self):
         drv = self._get_xlx(self.args.name)
@@ -1912,8 +1911,9 @@ def main():
         metavar="SUBCOMMAND",
     )
 
-    xlx_subparser = xlx_subparsers.add_parser('xsdb', help="run XSDB")
-    xlx_subparser.add_argument('tcl_cmds', help="Tcl commands")
+    xlx_subparser = xlx_subparsers.add_parser('xsdb', help="run XSDB and connect to Vivado hardware server")
+    xlx_subparser.add_argument('tcl_cmds', nargs='?', default='', help="Tcl command to execute")
+    xlx_subparser.add_argument('-i', '--interactive', action='store_true', help="enter interactive mode after executing Tcl command")
     xlx_subparser.set_defaults(func=ClientSession.xlx_run_xsdb)
 
     xlx_subparser = xlx_subparsers.add_parser('program-bitstream', help="program bitstream")

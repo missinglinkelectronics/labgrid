@@ -1,5 +1,6 @@
 "Xilinx System Debugger (XSDB) driver"
 import attr
+import subprocess
 
 from .common import Driver
 from ..factory import target_factory
@@ -31,17 +32,22 @@ class XSDBDriver(Driver):
             self.xsdb_bin = 'xsdb'
 
     @Driver.check_active
-    @step(args=['tcl_cmds'])
-    def run(self, tcl_cmds):
+    @step(args=['tcl_cmds', 'interactive'])
+    def run(self, tcl_cmds, interactive=False):
         url = self.interface.agent_url.split(":")
         if not url[1]:
             url[1] = self.interface.host
 
         tcl_cmd = "connect -url {}; ".format(":".join(url))
-        tcl_cmd += "; ".join(tcl_cmds) + "; disconnect"
+        tcl_cmd += "; ".join(tcl_cmds)
+        if not interactive:
+            tcl_cmd += '; disconnect'
 
         cmd = [self.xsdb_bin, "-eval", tcl_cmd]
-        return processwrapper.check_output(cmd)
+        if interactive:
+            cmd.append('-interactive')
+
+        subprocess.run(cmd, check=True)
 
     @Driver.check_active
     @step(args=['filename'])
