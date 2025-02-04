@@ -1293,6 +1293,7 @@ class ClientSession(ApplicationSession):
         from ..driver.xsdbdriver import XSDBDriver
         from ..resource.remote import NetworkXilinxUSBJTAG
         drv = None
+        res = None
         for resource in target.resources:
             if isinstance(resource, NetworkXilinxUSBJTAG):
                 try:
@@ -1300,11 +1301,12 @@ class ClientSession(ApplicationSession):
                 except NoDriverFoundError:
                     target.set_binding_map({"interface": name})
                     drv = XSDBDriver(target, name=name)
+                res = resource
                 break
         if not drv:
             raise UserError("target has no compatible resource available")
         target.activate(drv)
-        return drv
+        return (res, drv)
 
     def xlx_run_xsdb(self):
         _, drv = self._get_xlx(self.args.name)
@@ -1313,15 +1315,22 @@ class ClientSession(ApplicationSession):
                 interactive = self.args.interactive or not bool(self.args.tcl_cmds))
 
     def xlx_program_bitstream(self):
-        drv = self._get_xlx(self.args.name)
+        _, drv = self._get_xlx(self.args.name)
 
         processwrapper.enable_print()
         drv.program_bitstream(self.args.bitstream)
         processwrapper.disable_print()
 
     def xlx_force_bootmode(self):
-        drv = self._get_xlx(self.args.name)
+        _, drv = self._get_xlx(self.args.name)
         drv.force_bootmode_reset(self.args.bootmode.lower())
+
+    def xlx_agent_url(self):
+        res, _ = self._get_xlx(self.args.name)
+        url = res.agent_url.split(":")
+        if not url[1]:
+            url[1] = res.host
+        print(':'.join(url))
 
     def _get_quartus(self, name):
         place = self.get_acquired_place()
@@ -1923,6 +1932,9 @@ def main():
     xlx_subparser = xlx_subparsers.add_parser('boot', help='force boot mode and reset device')
     xlx_subparser.add_argument('bootmode', type=str, help="Boot mode to select (jtag, sd, qsmi, emmc, usb")
     xlx_subparser.set_defaults(func=ClientSession.xlx_force_bootmode)
+
+    xlx_subparser = xlx_subparsers.add_parser('agent-url', help='print the agent url')
+    xlx_subparser.set_defaults(func=ClientSession.xlx_agent_url)
 
     subparser = subparsers.add_parser('intel', help="connect to a Quartus Jtagd Server")
     subparser.add_argument("--name", "-n", help="optional resource name")
