@@ -65,6 +65,7 @@ Arguments:
   - speed (int, default=115200): baud rate of the serial port
   - protocol (str, default="rfc2217"): protocol used for connection: raw or
     rfc2217
+  - conargs (str): extra connector arguments, eg. nobreak
 
 Used by:
   - `SerialDriver`_

@@ -242,27 +242,33 @@ class SerialPortExport(ResourceExport):
             raise ExporterError(f"ser2net {version} returned a nonzero code during version check.")
 
         if version >= (4, 2, 0):
+            conargs = f'{start_params["path"]},{self.local.speed}n81,local'
+            if self.local.conargs:
+                conargs += f",{self.local.conargs}"
             cmd = [
                 self.ser2net_bin,
                 "-d",
                 "-n",
                 "-Y",
-                f"connection: &con01#  accepter: telnet(rfc2217,mode=server),tcp,{self.port}",
+                f"connection: &con01#  accepter: telnet({self.local.protocol},mode=server),tcp,{self.port}",
                 "-Y",
-                f'  connector: serialdev(nouucplock=true),{start_params["path"]},{self.local.speed}n81,local',  # pylint: disable=line-too-long
+                f'  connector: serialdev(nouucplock=true),{conargs}',
                 "-Y",
                 "  options:",
                 "-Y",
                 "    max-connections: 10",
             ]
         else:
+            conargs = f'{start_params["path"]}:{self.local.speed} NONE 8DATABITS 1STOPBIT LOCAL'
+            if self.local.conargs:
+                conargs += f" {self.local.conargs}"
             cmd = [
                 self.ser2net_bin,
                 "-d",
                 "-n",
                 "-u",
                 "-C",
-                f'{self.port}:telnet:0:{start_params["path"]}:{self.local.speed} NONE 8DATABITS 1STOPBIT LOCAL',  # pylint: disable=line-too-long
+                f'{self.port}:telnet:0:{conargs}',  # pylint: disable=line-too-long
             ]
         self.logger.info("Starting ser2net with: %s", " ".join(cmd))
         self.child = subprocess.Popen(cmd)

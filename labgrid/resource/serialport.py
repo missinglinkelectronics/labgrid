@@ -25,7 +25,9 @@ class NetworkSerialPort(NetworkResource):
         port (str): socket port to connect to
         speed (int): speed of the port e.g. 9800
         protocol (str): connection protocol: "raw" or "rfc2217"
+        conargs (str): extra connector arguments, eg. nobreak
     """
     port = attr.ib(validator=attr.validators.optional(attr.validators.instance_of(int)))
     speed = attr.ib(default=115200, validator=attr.validators.instance_of(int))
     protocol = attr.ib(default="rfc2217", validator=attr.validators.instance_of(str))
+    conargs = attr.ib(default="", validator=attr.validators.instance_of(str))
