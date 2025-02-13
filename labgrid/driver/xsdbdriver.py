@@ -43,7 +43,7 @@ class XSDBDriver(Driver):
         if not interactive:
             tcl_cmd += '; disconnect'
 
-        cmd = [self.xsdb_bin, "-eval", tcl_cmd]
+        cmd = [self.xsdb_bin, "-quiet", "-eval", tcl_cmd]
         if interactive:
             cmd.append('-interactive')
 
