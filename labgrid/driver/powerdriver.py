@@ -504,7 +504,7 @@ class IPMIPowerDriver(Driver, PowerResetMixin, PowerProtocol):
         runstr += f"-p {self.port.password} {cmd}"
         runstr = runstr.split(' ')
         if len(self.port.args) > 0:
-            runstr.append(self.port.args)
+            runstr.extend(self.port.args.split(' '))
         return subprocess.run(runstr, capture_output=True)
 
     def _ipmi_cmd(self, cmd):
