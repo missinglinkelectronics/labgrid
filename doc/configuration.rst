@@ -318,7 +318,7 @@ Used by:
   - `AMTPowerDriver`_
 
 IPMIPowerPort
-++++++++++++
++++++++++++++
 A :any:`IPMIPowerPort` describes a IPMI port accessible via `ipmi-power`.
 
 .. code-block:: yaml
