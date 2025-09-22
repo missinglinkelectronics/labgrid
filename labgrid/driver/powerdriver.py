@@ -510,8 +510,12 @@ class IPMIPowerDriver(Driver, PowerResetMixin, PowerProtocol):
     def _ipmi_cmd(self, cmd):
         ret = self._ipmi_power(cmd)
         stdout = ret.stdout.decode('utf-8').split(' ')
-        assert self.port.host == stdout[0][:-1]
-        assert "ok" == stdout[1][:-1]
+
+        if stdout[0] == '':
+            return
+
+        assert self.port.host == stdout[0][:-1], f"unexpected stdout ({stdout})"
+        assert "ok" == stdout[1][:-1], f"unexpected stdout ({stdout})"
 
     @Driver.check_active
     @step()
