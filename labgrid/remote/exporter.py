@@ -329,7 +329,7 @@ class QuartusServerExport(ResourceExport):
             file.write(f"Password = \"{self.local.jtagd_password}\";")
 
         #find the right path to the library
-        lib_path = importlib.machinery.PathFinder.find_spec('libfilsel').origin
+        lib_path = importlib.machinery.PathFinder.find_spec('libhwsf').origin
 
         #get the usb path from the device serial number
         serialNumber = self.local.device_serial
