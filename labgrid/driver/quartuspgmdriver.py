@@ -1,19 +1,15 @@
 # pylint: disable=no-member
 import subprocess
 import os
-import re
 import attr
 import importlib
+import logging
 import tempfile
 from pathlib import Path
 
 from ..factory import target_factory
 from ..step import step
 from .common import Driver
-from .exception import ExecutionError
-from ..util.helper import processwrapper
-from ..util.managedfile import ManagedFile
-import logging
 
 JTAG_CONF_INTEL = """
 Remote1 {
@@ -56,41 +52,37 @@ class QuartusPGMDriver(Driver):
 
     @Driver.check_active
     @step(args=['filename', 'operation', 'devnum'])
-    def operate(self, filename=None, operation="P", devnum=1):
+    def operate(self, filename=None, operation="P", devnum=1) -> tuple[str, str]:
         if filename is None and self.image is not None:
             filename = self.target.env.config.get_image_path(self.image)
 
         log = logging.getLogger("QPGM_Driver")
 
-        try:
-            lib_path = importlib.machinery.PathFinder.find_spec('libfilsel').origin
-        except Exception as e:
-            return False, "could not find libfilsel!", str(e)
+        lib_path = importlib.machinery.PathFinder.find_spec('libfilsel').origin
 
-        my_env = os.environ.copy()
-        my_env["LD_PRELOAD"] = os.pathsep.join(filter(None, [lib_path, os.environ.get('LD_PRELOAD')]))
-        my_env["FILSEL_ORG_PATH"] = str((Path(os.path.expanduser('~')) / ".jtag.conf").resolve())
+        ld_preload = [lib_path, os.getenv('LD_PRELOAD', "")]
+        os.environ["LD_PRELOAD"] = os.pathsep.join(ld_preload)
+        os.environ["FILSEL_ORG_PATH"] = str((Path(os.path.expanduser('~')) / ".jtag.conf").resolve())
 
-        cable = f"--cable=\"{self.interface.device_name} on " + \
-                f"{self.interface.host}:{self.interface.jtagd_port} " + \
-                f"{self.interface.device_port}\""
-
-        operation = f"--operation=\"{operation};{filename}@{str(devnum)}\""
-        cmd = f"{self.tool} {cable} --mode=JTAG {operation}"
+        cable = f"'{self.interface.device_name} on {self.interface.host}:{self.interface.jtagd_port} {self.interface.device_port}'"
+        operation = f"'{operation};{filename}@{str(devnum)}'"
+        cmd = f"{self.tool} -c {cable} -m JTAG -o {operation}"
 
         with tempfile.NamedTemporaryFile() as conf_temp:
 
-            cfg = JTAG_CONF_INTEL.replace("HOST", self.interface.host + ":" + str(self.interface.jtagd_port))\
-                                 .replace("PASSWORD", self.interface.jtagd_password)
+            cfg = self.interface.extra['jtag_conf']
             conf_temp.write(cfg.encode("utf-8"))
             conf_temp.flush()
-            log.info("Flashing with command: " + str(cmd))
-            my_env["FILSEL_DEST_PATH"] = conf_temp.name
+            log.info("Flashing with command: %s", cmd)
+            os.environ["FILSEL_DEST_PATH"] = conf_temp.name
 
-            stdout, stderr = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env).communicate()
+            process = subprocess.Popen(cmd, shell=True,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
 
         if "Quartus Prime Programmer was successful." in stdout.decode("utf-8"):
-            return True, stdout.decode("utf-8"), stderr.decode("utf-8")
+            return stdout.decode("utf-8"), stderr.decode("utf-8")
         else:
-            return False, stdout.decode("utf-8"), stderr.decode("utf-8")
+            raise subprocess.CalledProcessError(process.returncode,
+                    cmd, output=stdout, stderr=stderr)
 

@@ -3,12 +3,14 @@ them available to other clients on the same coordinator"""
 
 import argparse
 import asyncio
+import importlib
 import json
 import logging
 import sys
 import os
 import os.path
 import signal
+import tempfile
 import time
 import traceback
 import shutil
@@ -19,7 +21,6 @@ from typing import Dict, Type
 from socket import gethostname, getfqdn
 import attr
 from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
-import importlib
 
 from .config import ResourceConfig
 from .common import ResourceEntry, enable_tcp_nodelay, monkey_patch_max_msg_payload_size_ws_option
@@ -301,74 +302,139 @@ exports["RawSerialPort"] = SerialPortExport
 
 
 @attr.s(eq=False)
-class QuartusServerExport(ResourceExport):
-    """ ResourceExport for a QuartusUSBJTAG via ``jtagd``"""
+class NetworkInterfaceExport(ResourceExport):
+    """ResourceExport for a network interface"""
 
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
-        self.data['cls'] = "NetworkQuartusUSBJTAG"
-        from ..resource.udev import QuartusUSBJTAG
-        self.local = QuartusUSBJTAG(target=None, name=None, **self.local_params)
-        self.child = None
+        if self.cls == "NetworkInterface":
+            from ..resource.base import NetworkInterface
 
-    def __del__(self):
-        if self.child is not None:
-            self.release()
+            self.local = NetworkInterface(target=None, name=None, **self.local_params)
+        elif self.cls == "USBNetworkInterface":
+            from ..resource.udev import USBNetworkInterface
 
-    def _get_custom_config_file_name(self):
-        serialNumber = self.local.device_serial
-        return os.path.join(self.local.jtagd_file_locations, f"jtagd_cfg_{serialNumber}_{self.local.jtagd_port}.conf")
+            self.local = USBNetworkInterface(target=None, name=None, **self.local_params)
+        self.data["cls"] = "RemoteNetworkInterface"
 
-    def acquire(self, *args, **kwargs):
-        """Start ``jtagd`` subprocess"""
-        assert self.local.avail
+    def _get_params(self):
+        """Helper function to return parameters"""
+        params = {
+            "host": self.host,
+            "ifname": self.local.ifname,
+        }
+        if self.cls == "USBNetworkInterface":
+            params["extra"] = {
+                "state": self.local.if_state,
+            }
 
-        cfgFileName = self._get_custom_config_file_name()
+        return params
 
-        with open(cfgFileName, 'w+') as file:
-            file.write(f"Password = \"{self.local.jtagd_password}\";")
 
-        #find the right path to the library
-        lib_path = importlib.machinery.PathFinder.find_spec('libhwsf').origin
+exports["USBNetworkInterface"] = NetworkInterfaceExport
+exports["NetworkInterface"] = NetworkInterfaceExport
 
-        #get the usb path from the device serial number
-        serialNumber = self.local.device_serial
-        dev_grep = "grep {SERIAL} /sys/bus/usb/devices/*/serial | cut -d '/' -f6".format(SERIAL=serialNumber)
-        dev_path, _ = subprocess.Popen(dev_grep, shell=True, stdout=subprocess.PIPE).communicate()
 
-        my_env = os.environ.copy()
-        my_env["LD_PRELOAD"] = os.pathsep.join(filter(None, [lib_path, os.environ.get('LD_PRELOAD')]))
-        my_env["HWSF_DEV"] = "path:" + dev_path.decode("utf-8").replace("\n","")
+@attr.s(eq=False)
+class USBGenericExport(ResourceExport):
+    """ResourceExport for USB devices accessed directly from userspace"""
 
-        cmd = " ".join([f"{self.local.jtagd_cmd}",
-                        f"--foreground",
-                        f"--port {self.local.jtagd_port}",
-                        f"--config {self._get_custom_config_file_name()}"])
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        local_cls_name = self.cls
+        self.data["cls"] = f"Network{self.cls}"
+        from ..resource import udev
 
-        self.logger.info("Starting jtagd with command: " + cmd)
-        self.logger.info("Starting jtagd with LD_PRELOAD=" + lib_path + " HWSF_DEV=" + my_env["HWSF_DEV"])
-
-        self.child = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid, env=my_env)
-
-    def release(self,  *args, **kwargs):
-        """Stop ``jtagd`` subprocess"""
-        assert self.child
-
-        os.remove(self._get_custom_config_file_name())
-        os.killpg(os.getpgid(self.child.pid), signal.SIGTERM)
-        self.child = None
-        self.logger.info(f"stopped jtagd at {self.local.jtagd_port}")
+        local_cls = getattr(udev, local_cls_name)
+        self.local = local_cls(target=None, name=None, **self.local_params)
 
     def _get_params(self):
         """Helper function to return parameters"""
         return {
-            'host': self.host,
-            'jtagd_password': self.local.jtagd_password,
-            'jtagd_port': self.local.jtagd_port,
-            'jtagd_cmd': self.local.jtagd_cmd,
-            'device_name': self.local.device_name,
-            'device_port': self.local.device_port,
+            "host": self.host,
+            "busnum": self.local.busnum,
+            "devnum": self.local.devnum,
+            "path": self.local.path,
+            "vendor_id": self.local.vendor_id,
+            "model_id": self.local.model_id,
         }
+
+
+@attr.s(eq=False)
+class QuartusServerExport(USBGenericExport):
+    """ ResourceExport for a QuartusUSBJTAG via ``jtagd``"""
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        self.child = None
+        self.jtagd_port = self.local.jtagd_port
+        self.cfg_tempfile = None
+
+    def __del__(self):
+        if self.child is not None:
+            self.stop()
+
+    def _start(self, start_params):
+        """Start ``jtagd`` subprocess"""
+        assert self.local.avail
+        assert self.child is None
+
+        if not self.jtagd_port:
+            self.jtagd_port = get_free_port()
+
+        self.cfg_tempfile = tempfile.NamedTemporaryFile()
+        self.cfg_tempfile.write(
+                f"Password = \"{self.local.jtagd_password}\";".encode('utf-8'))
+        self.cfg_tempfile.flush()
+
+        # find the right path to the library and modify the env
+        lib_path = importlib.machinery.PathFinder.find_spec('libhwsf').origin
+        ld_preload = [lib_path, os.getenv('LD_PRELOAD', "")]
+        os.environ["LD_PRELOAD"] = os.pathsep.join(ld_preload)
+        os.environ["HWSF_DEV"] = "path:" + self.local.device.sys_name
+
+        cmd = f"{self.local.jtagd_cmd} --foreground --port {self.jtagd_port} --config {self.cfg_tempfile.name}"
+
+        self.logger.info("starting jtagd for %s on port %s with command LD_PRELOAD+=%s HWSF_DEV=%s %s",
+                         self.local.device.sys_name, self.jtagd_port, lib_path,
+                         os.environ['HWSF_DEV'], cmd)
+        self.child = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
+
+    def _stop(self,  start_params):
+        """Stop ``jtagd`` subprocess"""
+        assert self.child
+        child = self.child
+        self.child = None
+        self.cfg_tempfile = None
+        child.terminate()
+        try:
+            child.wait(2.0)
+        except subprocess.TimeoutExpired:
+            self.logger.warning("jtagd for %s still running after SIGTERM",
+                                self.local.device.sys_name)
+            child.kill()
+            child.wait(1.0)
+
+        self.logger.info("stopped jtagd for %s on port %s",
+                         self.local.device.sys_name, self.jtagd_port)
+
+    def _get_params(self):
+        """Helper function to return parameters"""
+        return {
+            **super()._get_params(),
+            "jtagd_cmd": self.local.jtagd_cmd,
+            "jtagd_port": self.jtagd_port,
+            "jtagd_password": self.local.jtagd_password,
+            "device_name": self.local.device_name,
+            "device_port": self.local.device_port,
+            "extra": {
+                "jtag_conf": f"""Remote1 {{
+        Host = \"{self.host}:{self.jtagd_port}\";
+        Password = \"{self.local.jtagd_password}\";
+}}"""
+            }
+        }
+
 
 exports["QuartusUSBJTAG"] = QuartusServerExport
 
@@ -443,65 +509,6 @@ class VivadoHWServerExport(ResourceExport):
 
 
 exports["XilinxUSBJTAG"] = VivadoHWServerExport
-
-
-@attr.s(eq=False)
-class NetworkInterfaceExport(ResourceExport):
-    """ResourceExport for a network interface"""
-
-    def __attrs_post_init__(self):
-        super().__attrs_post_init__()
-        if self.cls == "NetworkInterface":
-            from ..resource.base import NetworkInterface
-
-            self.local = NetworkInterface(target=None, name=None, **self.local_params)
-        elif self.cls == "USBNetworkInterface":
-            from ..resource.udev import USBNetworkInterface
-
-            self.local = USBNetworkInterface(target=None, name=None, **self.local_params)
-        self.data["cls"] = "RemoteNetworkInterface"
-
-    def _get_params(self):
-        """Helper function to return parameters"""
-        params = {
-            "host": self.host,
-            "ifname": self.local.ifname,
-        }
-        if self.cls == "USBNetworkInterface":
-            params["extra"] = {
-                "state": self.local.if_state,
-            }
-
-        return params
-
-
-exports["USBNetworkInterface"] = NetworkInterfaceExport
-exports["NetworkInterface"] = NetworkInterfaceExport
-
-
-@attr.s(eq=False)
-class USBGenericExport(ResourceExport):
-    """ResourceExport for USB devices accessed directly from userspace"""
-
-    def __attrs_post_init__(self):
-        super().__attrs_post_init__()
-        local_cls_name = self.cls
-        self.data["cls"] = f"Network{self.cls}"
-        from ..resource import udev
-
-        local_cls = getattr(udev, local_cls_name)
-        self.local = local_cls(target=None, name=None, **self.local_params)
-
-    def _get_params(self):
-        """Helper function to return parameters"""
-        return {
-            "host": self.host,
-            "busnum": self.local.busnum,
-            "devnum": self.local.devnum,
-            "path": self.local.path,
-            "vendor_id": self.local.vendor_id,
-            "model_id": self.local.model_id,
-        }
 
 
 @attr.s(eq=False)

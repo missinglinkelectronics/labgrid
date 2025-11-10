@@ -179,10 +179,9 @@ class NetworkAlteraUSBBlaster(RemoteUSBResource):
 
 @target_factory.reg_resource
 @attr.s(eq=False)
-class NetworkQuartusUSBJTAG(NetworkResource, ManagedResource):
-    host = attr.ib(default="")
+class NetworkQuartusUSBJTAG(RemoteUSBResource):
     jtagd_password = attr.ib(default="password1234")
-    jtagd_port = attr.ib(default=3109)
+    jtagd_port = attr.ib(factory=int)
     jtagd_cmd = attr.ib(default="jtagd")
     device_name = attr.ib(default="Arrow-USB-Blaster")
     device_port = attr.ib(default="")

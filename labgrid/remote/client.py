@@ -66,17 +66,6 @@ class InteractiveCommandError(Error):
     pass
 
 
-class QuartusPgmDriverError(Exception):
-    """Exception raised for errors in the Quartus PGM Driver.
-    """
-
-    def __init__(self, stdout, stderr):
-        self.stdout = stdout
-        self.stderr = stderr
-        self.message = "QuartusPGM failed with stdout: " + stdout + " and stderr: " + stderr
-        super().__init__(self.message)
-
-
 class ClientSession(ApplicationSession):
     """The ClientSession encapsulates all the actions a Client can Invoke on
     the coordinator."""
@@ -1354,12 +1343,10 @@ class ClientSession(ApplicationSession):
     def intel_program_bitstream(self):
         drv = self._get_quartus(self.args.name)
         processwrapper.enable_print()
-        ret, stdout, stderr = drv.flash(self.args.bitstream)
-        if not ret:
-            print("Flashing failed with:")
-            print(stdout)
-            print(stderr)
-            raise QuartusPgmDriverError(stdout, stderr)
+        try:
+            drv.flash(self.args.bitstream)
+        except subprocess.CalledProcessError as e:
+            raise UserError(f"programming failed with {e.returncode}\n{(e.stdout + e.stderr).decode('utf-8')}")
         processwrapper.disable_print()
 
     def write_image(self):
