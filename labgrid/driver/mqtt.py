@@ -89,7 +89,7 @@ class TasmotaPowerDriver(Driver, PowerProtocol):
     @Driver.check_active
     @step()
     def get(self):
-        for retry in range(3):
+        for _ in range(3):
             self._publish(self.power.power_topic, "")
             timeout = Timeout(1.0)
             while self._status is None:
