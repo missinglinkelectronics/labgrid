@@ -7,7 +7,6 @@ from ..factory import target_factory
 from ..resource.udev import XilinxUSBJTAG
 from ..resource.remote import NetworkXilinxUSBJTAG
 from ..step import step
-from ..util.helper import processwrapper
 
 
 @target_factory.reg_driver
