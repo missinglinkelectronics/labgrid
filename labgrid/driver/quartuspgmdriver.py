@@ -11,12 +11,15 @@ from ..factory import target_factory
 from ..step import step
 from .common import Driver
 
+
+# backward compatibility with version < v24.0.0+mle.3
 JTAG_CONF_INTEL = """
 Remote1 {
 	Host = "HOST";
 	Password = "PASSWORD";
 }
 """
+
 
 @target_factory.reg_driver
 @attr.s(eq=False)
@@ -69,8 +72,12 @@ class QuartusPGMDriver(Driver):
         cmd = f"{self.tool} -c {cable} -m JTAG -o {operation}"
 
         with tempfile.NamedTemporaryFile() as conf_temp:
-
-            cfg = self.interface.extra['jtag_conf']
+            if 'jtag_conf' in self.interface.extra:
+                cfg = self.interface.extra['jtag_conf']
+            # backward compatibility with version < v24.0.0+mle.3
+            else:
+                cfg = JTAG_CONF_INTEL.replace("HOST", self.interface.host + ":" + str(self.interface.jtagd_port))\
+                                     .replace("PASSWORD", self.interface.jtagd_password)
             conf_temp.write(cfg.encode("utf-8"))
             conf_temp.flush()
             log.info("Flashing with command: %s", cmd)
