@@ -390,15 +390,16 @@ class QuartusServerExport(USBGenericExport):
         # find the right path to the library and modify the env
         lib_path = importlib.machinery.PathFinder.find_spec('libhwsf').origin
         ld_preload = [lib_path, os.getenv('LD_PRELOAD', "")]
-        os.environ["LD_PRELOAD"] = os.pathsep.join(ld_preload)
-        os.environ["HWSF_DEV"] = "path:" + self.local.device.sys_name
+        my_env = os.environ.copy()
+        my_env["LD_PRELOAD"] = os.pathsep.join(ld_preload)
+        my_env["HWSF_DEV"] = "path:" + self.local.device.sys_name
 
         cmd = f"{self.local.jtagd_cmd} --foreground --port {self.jtagd_port} --config {self.cfg_tempfile.name}"
 
         self.logger.info("starting jtagd for %s on port %s with command LD_PRELOAD+=%s HWSF_DEV=%s %s",
                          self.local.device.sys_name, self.jtagd_port, lib_path,
-                         os.environ['HWSF_DEV'], cmd)
-        self.child = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
+                         my_env['HWSF_DEV'], cmd)
+        self.child = subprocess.Popen(cmd, env=my_env, shell=True, preexec_fn=os.setsid)
 
     def _stop(self,  start_params):
         """Stop ``jtagd`` subprocess"""

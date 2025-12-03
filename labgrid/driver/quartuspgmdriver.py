@@ -64,8 +64,9 @@ class QuartusPGMDriver(Driver):
         lib_path = importlib.machinery.PathFinder.find_spec('libfilsel').origin
 
         ld_preload = [lib_path, os.getenv('LD_PRELOAD', "")]
-        os.environ["LD_PRELOAD"] = os.pathsep.join(ld_preload)
-        os.environ["FILSEL_ORG_PATH"] = str((Path(os.path.expanduser('~')) / ".jtag.conf").resolve())
+        my_env = os.environ.copy()
+        my_env["LD_PRELOAD"] = os.pathsep.join(ld_preload)
+        my_env["FILSEL_ORG_PATH"] = str((Path(os.path.expanduser('~')) / ".jtag.conf").resolve())
 
         cable = f"'{self.interface.device_name} on {self.interface.host}:{self.interface.jtagd_port} {self.interface.device_port}'"
         operation = f"'{operation};{filename}@{str(devnum)}'"
@@ -81,9 +82,9 @@ class QuartusPGMDriver(Driver):
             conf_temp.write(cfg.encode("utf-8"))
             conf_temp.flush()
             log.info("Flashing with command: %s", cmd)
-            os.environ["FILSEL_DEST_PATH"] = conf_temp.name
+            my_env["FILSEL_DEST_PATH"] = conf_temp.name
 
-            process = subprocess.Popen(cmd, shell=True,
+            process = subprocess.Popen(cmd, shell=True, env=my_env,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = process.communicate()
 
