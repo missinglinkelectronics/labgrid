@@ -827,10 +827,14 @@ _labgrid_client_xlx()
     *)
         local args
         _labgrid_count_args "@(-n|--name)" || return
-        # only complete second argument
-        [ "$args" -ne 2 ] && return
-
-        COMPREPLY=( $(compgen -W "xsdb program-bitstream boot" -- "$cur") )
+        case "$args" in
+        2)
+            COMPREPLY=( $(compgen -W "xsdb program-bitstream boot" -- "$cur") )
+            ;;
+        3)
+            _filedir
+            ;;
+        esac
         ;;
     esac
 }
@@ -854,10 +858,14 @@ _labgrid_client_intel()
     *)
         local args
         _labgrid_count_args "@(-n|--name)" || return
-        # only complete second argument
-        [ "$args" -ne 2 ] && return
-
-        COMPREPLY=( $(compgen -W "program-bitstream" -- "$cur") )
+        case "$args" in
+        2)
+            COMPREPLY=( $(compgen -W "program-bitstream" -- "$cur") )
+            ;;
+        3)
+            _filedir
+            ;;
+        esac
         ;;
     esac
 }
