@@ -396,6 +396,10 @@ class QuartusServerExport(USBGenericExport):
 
         cmd = f"{self.local.jtagd_cmd} --foreground --port {self.jtagd_port} --config {self.cfg_tempfile.name}"
 
+        # jtagd can filter Altera USB-Blaster devices by serial
+        if self.local.serial_short:
+            cmd += f" --auto-detect-filter {self.local.serial_short}"
+
         self.logger.info("starting jtagd for %s on port %s with command LD_PRELOAD+=%s HWSF_DEV=%s %s",
                          self.local.device.sys_name, self.jtagd_port, lib_path,
                          my_env['HWSF_DEV'], cmd)
