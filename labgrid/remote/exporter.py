@@ -415,13 +415,12 @@ class QuartusServerExport(USBGenericExport):
         try:
             child.wait(2.0)
         except subprocess.TimeoutExpired:
-            self.logger.warning("jtagd for %s still running after SIGTERM",
-                                self.local.device.sys_name)
+            self.logger.warning("jtagd on port %s still running after SIGTERM",
+                                self.jtagd_port)
             child.kill()
             child.wait(1.0)
 
-        self.logger.info("stopped jtagd for %s on port %s",
-                         self.local.device.sys_name, self.jtagd_port)
+        self.logger.info("stopped jtagd on port %s", self.jtagd_port)
 
     def _get_params(self):
         """Helper function to return parameters"""
