@@ -38,15 +38,17 @@ class XSDBDriver(Driver):
             url[1] = self.interface.host
 
         tcl_cmd = "connect -url {}; ".format(":".join(url))
-        tcl_cmd += "; ".join(tcl_cmds)
+        tcl_cmd += "puts [" + "; ".join(tcl_cmds) + "]"
         if not interactive:
             tcl_cmd += '; disconnect'
 
         cmd = [self.xsdb_bin, "-quiet", "-eval", tcl_cmd]
         if interactive:
             cmd.append('-interactive')
-
-        subprocess.run(cmd, check=True)
+            proc = subprocess.run(cmd, check=True)
+        else:
+            proc = subprocess.run(cmd, check=True, capture_output=True, encoding='utf-8')
+            return proc.stdout + proc.stderr
 
     @Driver.check_active
     @step(args=['filename'])

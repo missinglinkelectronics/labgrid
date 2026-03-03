@@ -1299,20 +1299,22 @@ class ClientSession(ApplicationSession):
 
     def xlx_run_xsdb(self):
         _, drv = self._get_xlx(self.args.name)
-
-        drv.run([self.args.tcl_cmds],
+        ret = drv.run([self.args.tcl_cmds],
                 interactive = self.args.interactive or not bool(self.args.tcl_cmds))
+        if ret:
+            print(ret)
 
     def xlx_program_bitstream(self):
         _, drv = self._get_xlx(self.args.name)
-
-        processwrapper.enable_print()
-        drv.program_bitstream(self.args.bitstream)
-        processwrapper.disable_print()
+        ret = drv.program_bitstream(self.args.bitstream)
+        if ret:
+            print(ret)
 
     def xlx_force_bootmode(self):
         _, drv = self._get_xlx(self.args.name)
-        drv.force_bootmode_reset(self.args.bootmode.lower())
+        ret = drv.force_bootmode_reset(self.args.bootmode.lower())
+        if ret:
+            print(ret)
 
     def xlx_agent_url(self):
         res, _ = self._get_xlx(self.args.name)
