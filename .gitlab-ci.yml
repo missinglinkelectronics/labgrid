@@ -1,9 +1,10 @@
 stages:
   - lint
   - test
+  - package
   - doc
 
-before_script:
+.setup_venv: &setup_venv
   - python3 -m venv .venv
   - source .venv/bin/activate
   - pip install .[dev]
@@ -12,6 +13,7 @@ lint:
   stage: lint
   dependencies: []
   script:
+    - *setup_venv
     - pip install pylint-gitlab
     # call ruff twice as there is no option to print output and generate report
     - ruff check || true
@@ -30,6 +32,7 @@ test:
   allow_failure: true
   script:
     # set localhost known_hosts to current localhost
+    - *setup_venv
     - ssh-keygen -f "$HOME/.ssh/known_hosts" -R "localhost" || true
     - ssh -o StrictHostKeyChecking=no localhost true
     - |
@@ -43,10 +46,43 @@ test:
     reports:
       junit: junit.xml
 
+
+.gbp_package_script: &gbp_package_script
+  - git fetch origin mle/${DIST}/v24.0.0+mle
+  - git branch -a
+  - mkdir $TEMPDIR
+  - cd $TEMPDIR
+  - git clone .. . --branch mle/${DIST}/v24.0.0+mle
+  - git branch -a
+  - git rebase ${CI_COMMIT_REF_SLUG}
+  - dch --increment --distribution jammy "ci build from ${CI_COMMIT_REF_SLUG}"
+  - git add debian/changelog
+  - git commit -m"changelog for ${CI_COMMIT_REF_SLUG}"
+  - gbp buildpackage
+
+package:jammy:
+  stage: package
+  dependencies: []
+  variables:
+    TEMPDIR: "tempdir"
+    DIST: ubuntu-jammy
+  script:
+    - *gbp_package_script
+
+package:noble:
+  stage: package
+  dependencies: []
+  variables:
+    TEMPDIR: "tempdir"
+    DIST: ubuntu-noble
+  script:
+    - *gbp_package_script
+
 pages:
   stage: doc
   dependencies: []
   script:
+    - *setup_venv
     - sphinx-build -b html doc public
   artifacts:
     paths:
