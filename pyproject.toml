@@ -152,7 +152,7 @@ packages = [
 ]
 
 [tool.setuptools_scm]
-local_scheme = "no-local-version"
+version_scheme = "no-guess-dev"
 version_file = "labgrid/_version.py"
 
 [tool.pytest.ini_options]
