@@ -46,7 +46,12 @@ from ..util.helper import processwrapper
 from ..driver import Mode, ExecutionError
 from ..logging import basicConfig, StepLogger
 
-txaio.config.loop = asyncio.get_event_loop()  # pylint: disable=no-member
+try:
+    txaio.config.loop = asyncio.get_event_loop()
+except RuntimeError:
+    txaio.config.loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(txaio.config.loop)
+
 monkey_patch_max_msg_payload_size_ws_option()
 
 
